@@ -14,46 +14,21 @@ const btn=(name,act,cls='secondary')=>`<button class="btn ${cls}" data-action="$
 const notice=(message)=>{const e=document.getElementById('flash');if(e){e.textContent=message;e.hidden=false;setTimeout(()=>{if(e)e.hidden=true},5500);}else alert(message)};
 function cleanSubs(){unsubs.forEach(f=>f());unsubs=[];}
 function loginPage(error=''){
-  root.innerHTML = `
-    <main class="login-wrap">
-      <section class="login-card">
-        <span class="eyebrow">MARTYS · ADMIN</span>
-        <h1>관리자 로그인</h1>
-        <p>관리자만 로그인해 주세요.</p>
-        <form id="login-form">
-          <label class="field">이메일
-            <input type="email" name="email" required>
-          </label>
-          <label class="field">비밀번호
-            <input type="password" name="password" required>
-          </label>
-          <button class="btn full" type="submit">로그인</button>
-        </form>
-        <p class="error" id="login-error">${esc(error)}</p>
-        <button class="btn secondary" data-action="public">
-          홈페이지로 돌아가기
-        </button>
-      </section>
-    </main>`;
-
-  root.querySelector('[data-action="public"]').onclick = () => shell();
-
-  document.getElementById('login-form').onsubmit = async e => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    try {
-      await signInWithEmailAndPassword(
-        auth, f.get('email'), f.get('password')
-      );
-    } catch (err) {
-      document.getElementById('login-error').textContent =
-        '로그인에 실패했습니다.';
-    }
-  };
+  root.innerHTML=`<main class="login-wrap"><section class="login-card"><span class="eyebrow">MARTYS · ADMIN</span><h1>관리자 로그인</h1><p>관리자만 로그인해 주세요.</p><form id="login-form"><label class="field">이메일<input type="email" name="email" required autocomplete="username"></label><label class="field">비밀번호<input type="password" name="password" required autocomplete="current-password"></label><button class="btn full" type="submit">로그인</button></form><p class="error" id="login-error">${esc(error)}</p>${btn('홈페이지로 돌아가기','public')}</section></main>`;
+  bindActions();
+  document.getElementById('login-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await signInWithEmailAndPassword(auth,f.get('email'),f.get('password'))}catch(err){document.getElementById('login-error').textContent='로그인에 실패했습니다. 계정 정보를 확인해 주세요.'}};
 }
 function denied(){root.innerHTML=`<main class="login-wrap"><section class="login-card"><h1>MARTYS</h1><h3>팀원 승인이 필요합니다</h3><p>로그인은 되었지만 승인된 팀원 목록에 없습니다. 관리자에게 계정 UID 등록을 요청하세요.</p>${btn('로그아웃','logout')}</section></main>`;bindActions()}
-function shell(){root.innerHTML=`<div class="shell"><header class="topbar"><div class="logo">MARTYS<small>JAPAN MISSION 2026</small></div><div class="header-actions"><span class="muted" style="font-size:12px">${esc(profile.name||user.email)} · ${admin()?'관리자':'팀원'}</span>${btn('로그아웃','logout')}</div></header><div id="flash" class="notice" hidden></div><nav class="nav" id="navigation">${[['home','홈'],['purpose','선교 목적'],['schedule','일정'],['budget','예산'],['songs','찬양 연습실']].map(([k,v])=>`<button data-tab="${k}" class="${active===k?'active':''}">${v}</button>`).join('')}</nav><main id="content"></main><footer class="footer">MARTYS · 주안감리교회 참청년부 · 2026.10.16–18</footer></div>`;root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.tab;selectedSong=null;render()});bindActions();render()}
-function bindActions(){root.querySelectorAll('[data-action="logout"]').forEach(b=>b.onclick=()=>signOut(auth))}
+function shell(){
+  const who=admin()?`${esc(profile.name||user.email)} · 관리자`:'팀원 열람용';
+  root.innerHTML=`<div class="shell"><header class="topbar"><div class="logo">MARTYS<small>JAPAN MISSION 2026</small></div><div class="header-actions"><span class="muted" style="font-size:12px">${who}</span>${admin()?btn('로그아웃','logout'):btn('관리자 로그인','admin-login')}</div></header><div id="flash" class="notice" hidden></div><nav class="nav" id="navigation">${[['home','홈'],['purpose','선교 목적'],['schedule','일정'],['budget','예산'],['songs','찬양 연습실']].map(([k,v])=>`<button data-tab="${k}" class="${active===k?'active':''}">${v}</button>`).join('')}</nav><main id="content"></main><footer class="footer">MARTYS · 주안감리교회 참청년부 · 2026.10.16–18</footer></div>`;
+  root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.tab;selectedSong=null;render()});bindActions();render();
+}
+function bindActions(){
+  root.querySelectorAll('[data-action="logout"]').forEach(b=>b.onclick=()=>signOut(auth));
+  root.querySelectorAll('[data-action="admin-login"]').forEach(b=>b.onclick=()=>loginPage());
+  root.querySelectorAll('[data-action="public"]').forEach(b=>b.onclick=()=>shell());
+}
 function section(title,sub='',action=''){return `<div class="section-head"><div><h2>${esc(title)}</h2><span class="sub">${esc(sub)}</span></div>${action}</div>`}
 function render(){const c=document.getElementById('content');if(!c)return;root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===active));c.innerHTML=({home:home,purpose:purpose,schedule:scheduleView,budget:budget,songs:songsView}[active]||home)();bindContent(c)}
 function home(){const spent=items.expenses.reduce((s,e)=>s+Number(e.amount||0),0);return `<section class="hero"><span class="eyebrow">WE ARE HIS WITNESSES · ACTS 1:8</span><h1>일본 땅에<br>찬양을 흘려보내다.</h1><p>하나님께 시간을 드리고 물질을 드리는 기쁨을 누리며<br>생명 되신 예수님을 전합니다.</p><span class="pill">2026.10.16 — 10.18 · 후쿠오카 텐진 · 8명</span></section><div class="grid"><article class="card"><h3>찬양 연습</h3><div class="stat">${items.songs.length}곡</div><p class="sub">가사 · 한글 발음 · 음원 · 악보</p>${btn('연습실 열기','goto:songs')}</article><article class="card"><h3>남은 공동 예산</h3><div class="stat">${won(TOTAL-spent)}</div><p class="sub">총 계획 ${won(TOTAL)} · 등록 지출 ${won(spent)}</p>${btn('예산 보기','goto:budget')}</article><article class="card"><h3>선교 일정</h3><div class="stat">2박 3일</div><p class="sub">10월 16일(금) – 18일(일)</p>${btn('일정 보기','goto:schedule')}</article><article class="card"><h3>선교 비전</h3><p>우리는 예수 그리스도의 증인입니다.</p>${btn('목적 보기','goto:purpose')}</article></div>`}
@@ -76,5 +51,21 @@ async function uploadSongFile(file,type,limit,allowed){if(file.size>limit)throw 
 async function remove(kind,id){if(!admin())return;if(!confirm('정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;try{const x=items[kind].find(v=>v.id===id);await deleteDoc(doc(db,kind,id));if(kind==='songs'){for(const p of [x?.audioPath,x?.scorePath])if(p)try{await deleteObject(ref(storage,p))}catch(e){console.warn('첨부파일 삭제 실패',e)}}if(selectedSong===id)selectedSong=null;notice('삭제되었습니다.')}catch(e){notice('삭제 실패: '+e.message)}}
 function bindContent(c){c.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{const [cmd,kind,id]=b.dataset.action.split(':');if(cmd==='goto'){active=kind;render()}if(cmd==='form'&&admin())openForm(kind);if(cmd==='edit'&&admin())openForm(kind,id);if(cmd==='delete'&&admin())remove(kind,id);if(cmd==='song'){selectedSong=kind;lyricTab='japanese';render()}if(cmd==='back'){selectedSong=null;render()}if(cmd==='cancel')document.getElementById('form-area').innerHTML=''});c.querySelectorAll('[data-lyric]').forEach(b=>b.onclick=()=>{lyricTab=b.dataset.lyric;render()})}
 function listen(){cleanSubs();for(const name of ['expenses','schedule','songs']){const unsub=onSnapshot(collection(db,name),snap=>{items[name]=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>notice(name+' 불러오기 실패: '+err.message));unsubs.push(unsub)}}
-async function start(){if(firebaseConfig.apiKey==='REPLACE_ME'){root.innerHTML='<main class="login-wrap"><div class="login-card"><h1>MARTYS</h1><p>Firebase 설정이 필요합니다.</p><p class="notice">firebase-config.js 파일에 Firebase 웹 앱 설정값을 입력한 뒤 GitHub Pages에 배포하세요. 자세한 내용은 README.md를 참고하세요.</p></div></main>';return}const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);storage=getStorage(app);onAuthStateChanged(auth,async u=>{cleanSubs();user=u;profile=null;if(!u){loginPage();return}root.innerHTML='<div class="loading">MARTYS <small>팀원 확인 중...</small></div>';try{const p=await getDoc(doc(db,'users',u.uid));if(!p.exists()||p.data().active!==true||!['admin','member'].includes(p.data().role)){denied();return}profile=p.data();shell();listen()}catch(e){root.innerHTML=`<main class="login-wrap"><section class="login-card"><h3>접근 확인 실패</h3><p class="error">${esc(e.message)}</p>${btn('로그아웃','logout')}</section></main>`;bindActions()}})}
+async function start(){
+  if(firebaseConfig.apiKey==='REPLACE_ME'){
+    root.innerHTML='<main class="login-wrap"><div class="login-card"><h1>MARTYS</h1><p>Firebase 설정이 필요합니다.</p></div></main>';return;
+  }
+  const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);storage=getStorage(app);
+  onAuthStateChanged(auth,async u=>{
+    cleanSubs();user=u;profile=null;
+    if(u){
+      try{
+        const p=await getDoc(doc(db,'users',u.uid));
+        if(p.exists()&&p.data().active===true&&p.data().role==='admin')profile=p.data();
+        else {await signOut(auth);return;}
+      }catch(e){console.error('관리자 권한 확인 실패',e);await signOut(auth);return;}
+    }
+    shell();listen();
+  });
+}
 start().catch(e=>root.innerHTML=`<div class="login-wrap"><div class="login-card"><h3>초기화 오류</h3><p class="error">${esc(e.message)}</p></div></div>`);
