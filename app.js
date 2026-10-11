@@ -67,34 +67,70 @@ function scheduleView(){const days=[['2026-10-16','DAY 1 · 10월 16일 (금)'],
 function budget(){const spent=totalSpent(),pct=Math.min(100,Math.max(0,spent/TOTAL*100));return `${section('공동 예산 사용 현황','8명 · 1인 공동회비 400,000원 · 항공권 개인 부담',admin()?btn('지출 등록','form:expenses'):'')}<div class="grid"><div class="card"><h3>공동 계획 예산</h3><div class="stat">${won(TOTAL)}</div><p class="sub">항공권 제외 · 공동회비 8명 × 400,000원</p></div><div class="card"><h3>남은 공동 예산</h3><div class="stat">${won(TOTAL-spent)}</div><p class="sub">등록 지출 ${won(spent)}</p></div></div><article class="card"><strong>예산 집행률 ${pct.toFixed(1)}%</strong><div class="progress"><span style="width:${pct}%"></span></div><p class="sub">계획 금액은 지출로 계산하지 않습니다. 등록한 지출만 잔액에 반영됩니다.</p></article><article class="card"><h3>항목별 공동 예산</h3>${planned.map(([name,v])=>{const used=items.expenses.filter(x=>x.category===name).reduce((s,x)=>s+Number(x.amount||0),0);return `<div class="list-row"><span>${esc(name)}<p class="sub">사용 ${won(used)} · 잔액 ${won(v-used)}</p></span><strong class="money">${won(v)}</strong></div>`}).join('')}</article><article class="card"><h3>항공권 · 개인 부담 (공동예산 제외)</h3><div class="list-row"><span>항공권 총액 (8명)</span><strong class="money">${won(AIRFARE)}</strong></div><p class="sub">1인 430,000원 · 공동예산 및 지출 합계에 포함되지 않습니다.</p></article><article class="card"><h3>지출 내역</h3>${items.expenses.map(x=>`<div class="list-row"><div><strong>${esc(x.category)} · ${esc(x.title)}</strong><p>${esc(x.date||'')}${x.memo?' · '+esc(x.memo):''}</p></div><div style="text-align:right"><strong>${won(x.amount)}</strong>${admin()?`<div class="row-actions">${btn('수정','edit:expenses:'+x.id,'tiny secondary')}${btn('삭제','delete:expenses:'+x.id,'tiny danger')}</div>`:''}</div></div>`).join('')||'<div class="empty">아직 등록된 지출이 없습니다.</div>'}</article>${admin()?formArea():''}`}
 function safeUrl(url){try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
 function alignedLyrics(x){
-  // 절 제목과 빈 줄은 각 언어에서 독립적으로 처리하여 줄 밀림을 방지합니다.
-  const heading = t => /^(?:\d+\s*절|후렴|코러스|브릿지|브리지|전주|간주|마지막\s*후렴|반복|verse\s*\d+|chorus|bridge|intro|outro)(?:\s*[:：-])?$/i.test(t.trim());
-  const clean = key => String(x[key]||'').replace(/\r\n?/g,'\n').split('\n').map(t=>t.trim());
-  const arrays=[clean('japanese'),clean('pronunciation'),clean('korean')];
-  if(!arrays.some(a=>a.some(t=>t)))return '<p class="sub">아직 등록된 가사가 없습니다.</p>';
-  const parse = lines => {
-    const groups=[];let current={name:'',lines:[]};
+  // 1절 / 2절 / 후렴은 세 언어에 중복 입력되어도 한 번만 표시합니다.
+  const normalized = text => String(text || '').normalize('NFKC').trim().replace(/\s+/g,' ');
+  const sectionName = text => {
+    const value = normalized(text).replace(/[：:\-–—]+$/,'').trim();
+    const match = value.match(/^(\d+)\s*(?:절|verse|절\.)$/i);
+    if(match) return `${Number(match[1])}절`;
+    if(/^(?:후렴|코러스|chorus|refrain)$/i.test(value)) return '후렴';
+    if(/^(?:브릿지|브리지|bridge)$/i.test(value)) return '브릿지';
+    if(/^(?:전주|intro)$/i.test(value)) return '전주';
+    if(/^(?:간주|interlude)$/i.test(value)) return '간주';
+    if(/^(?:마지막\s*후렴|final\s*chorus)$/i.test(value)) return '마지막 후렴';
+    return '';
+  };
+  const parse = key => {
+    const lines=String(x[key]||'').replace(/\r\n?/g,'\n').split('\n').map(t=>t.trim());
+    const groups=[];
+    let current={name:'',lines:[]};
     for(const line of lines){
-      if(heading(line)){
-        if(current.name||current.lines.some(Boolean))groups.push(current);
-        current={name:line,lines:[]};
-      }else if(line){current.lines.push(line)}
+      if(!line) continue;
+      const name=sectionName(line);
+      if(name){
+        // 같은 절 제목이 연속해서 등장할 경우 하나로 합칩니다.
+        if(current.name===name && current.lines.length===0)continue;
+        if(current.name || current.lines.length)groups.push(current);
+        current={name,lines:[]};
+      }else current.lines.push(line);
     }
-    if(current.name||current.lines.some(Boolean))groups.push(current);
+    if(current.name || current.lines.length)groups.push(current);
     return groups;
   };
-  const parsed=arrays.map(parse);
-  const labels=parsed.find(groups=>groups.some(g=>g.name))||parsed[0];
-  const total=Math.max(...parsed.map(g=>g.length));
+  const parsed=['japanese','pronunciation','korean'].map(parse);
+  if(!parsed.some(groups=>groups.length))return '<p class="sub">아직 등록된 가사가 없습니다.</p>';
+  // 한 언어에만 절 제목이 있어도 다른 언어의 가사를 같은 절로 묶습니다.
+  const sectionOrder=[];
+  for(const groups of parsed){
+    for(const group of groups){
+      if(group.name && !sectionOrder.includes(group.name))sectionOrder.push(group.name);
+    }
+  }
+  const hasHeadings=sectionOrder.length>0;
+  const grouped=parsed.map(groups=>{
+    const result=new Map();
+    let lastName='';
+    for(let i=0;i<groups.length;i++){
+      const group=groups[i];
+      const name=group.name || (hasHeadings ? (sectionOrder[i]||lastName||sectionOrder[0]) : '');
+      if(!result.has(name))result.set(name,[]);
+      result.get(name).push(...group.lines);
+      lastName=name;
+    }
+    return result;
+  });
+  const order=hasHeadings?sectionOrder:[''];
   let out='';
-  for(let g=0;g<total;g++){
-    const groups=parsed.map(p=>p[g]||{name:'',lines:[]});
-    const label=(labels[g]&&labels[g].name)||groups.find(v=>v.name)?.name||'';
-    if(label)out+=`<div class="lyric-section-title"><span>${esc(label)}</span></div>`;
-    const n=Math.max(...groups.map(v=>v.lines.length));
-    for(let i=0;i<n;i++){
-      const [a,b,c]=groups.map(v=>v.lines[i]||'');
-      out+=`<div class="lyric-verse">${a?`<div class="lyric-jp">${esc(a)}</div>`:''}${b?`<div class="lyric-pr">${esc(b)}</div>`:''}${c?`<div class="lyric-ko">${esc(c)}</div>`:''}</div>`;
+  for(const name of order){
+    const lines=grouped.map(map=>map.get(name)||[]);
+    if(!lines.some(a=>a.length))continue;
+    if(name)out+=`<div class="lyric-section-title"><span>${esc(name)}</span></div>`;
+    for(let i=0;i<Math.max(...lines.map(a=>a.length));i++){
+      const [jp,pr,ko]=lines.map(a=>a[i]||'');
+      // 저장된 가사 안에 중복된 제목이 있어도 본문에는 출력하지 않습니다.
+      const values=[jp,pr,ko].map(t=>sectionName(t)?'':t);
+      if(!values.some(Boolean))continue;
+      out+=`<div class="lyric-verse">${values[0]?`<div class="lyric-jp">${esc(values[0])}</div>`:''}${values[1]?`<div class="lyric-pr">${esc(values[1])}</div>`:''}${values[2]?`<div class="lyric-ko">${esc(values[2])}</div>`:''}</div>`;
     }
   }
   return out;
@@ -159,6 +195,7 @@ async function start(){
 }
 start().catch(e=>root.innerHTML=`<div class="login-wrap"><div class="login-card"><h3>초기화 오류</h3><p class="error">${esc(e.message)}</p></div></div>`);
 
+// MARTYS lyric grouping v3: 절 제목은 한 번만 표시합니다.
 // 모바일 찬양 가사 보기: 세 언어를 같은 줄에 배치합니다.
 const lyricStyle=document.createElement('style');
 lyricStyle.textContent=`
