@@ -66,7 +66,28 @@ function purpose(){return `${section('우리의 선교 목적','WHY WE GO')}<art
 function scheduleView(){const days=[['2026-10-16','DAY 1 · 10월 16일 (금)'],['2026-10-17','DAY 2 · 10월 17일 (토)'],['2026-10-18','DAY 3 · 10월 18일 (일)']];return `${section('선교 일정','현장 상황에 따라 변경될 수 있습니다',admin()?btn('일정 추가','form:schedule'):'')}${days.map(([d,label])=>`<article class="card"><h3>${label}</h3>${items.schedule.filter(x=>x.date===d).sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(x=>`<div class="list-row"><div><strong>${esc(x.time||'시간 미정')}${x.endTime?'–'+esc(x.endTime):''} · ${esc(x.title)}</strong><p>${esc(x.place||'')}${x.memo?' · '+esc(x.memo):''}</p></div>${admin()?`<div class="row-actions">${btn('수정','edit:schedule:'+x.id,'tiny secondary')}${btn('삭제','delete:schedule:'+x.id,'tiny danger')}</div>`:''}</div>`).join('')||'<div class="empty">등록된 일정이 없습니다.</div>'}</article>`).join('')}${admin()?formArea():''}`}
 function budget(){const spent=totalSpent(),pct=Math.min(100,Math.max(0,spent/TOTAL*100));return `${section('공동 예산 사용 현황','8명 · 1인 공동회비 400,000원 · 항공권 개인 부담',admin()?btn('지출 등록','form:expenses'):'')}<div class="grid"><div class="card"><h3>공동 계획 예산</h3><div class="stat">${won(TOTAL)}</div><p class="sub">항공권 제외 · 공동회비 8명 × 400,000원</p></div><div class="card"><h3>남은 공동 예산</h3><div class="stat">${won(TOTAL-spent)}</div><p class="sub">등록 지출 ${won(spent)}</p></div></div><article class="card"><strong>예산 집행률 ${pct.toFixed(1)}%</strong><div class="progress"><span style="width:${pct}%"></span></div><p class="sub">계획 금액은 지출로 계산하지 않습니다. 등록한 지출만 잔액에 반영됩니다.</p></article><article class="card"><h3>항목별 공동 예산</h3>${planned.map(([name,v])=>{const used=items.expenses.filter(x=>x.category===name).reduce((s,x)=>s+Number(x.amount||0),0);return `<div class="list-row"><span>${esc(name)}<p class="sub">사용 ${won(used)} · 잔액 ${won(v-used)}</p></span><strong class="money">${won(v)}</strong></div>`}).join('')}</article><article class="card"><h3>항공권 · 개인 부담 (공동예산 제외)</h3><div class="list-row"><span>항공권 총액 (8명)</span><strong class="money">${won(AIRFARE)}</strong></div><p class="sub">1인 430,000원 · 공동예산 및 지출 합계에 포함되지 않습니다.</p></article><article class="card"><h3>지출 내역</h3>${items.expenses.map(x=>`<div class="list-row"><div><strong>${esc(x.category)} · ${esc(x.title)}</strong><p>${esc(x.date||'')}${x.memo?' · '+esc(x.memo):''}</p></div><div style="text-align:right"><strong>${won(x.amount)}</strong>${admin()?`<div class="row-actions">${btn('수정','edit:expenses:'+x.id,'tiny secondary')}${btn('삭제','delete:expenses:'+x.id,'tiny danger')}</div>`:''}</div></div>`).join('')||'<div class="empty">아직 등록된 지출이 없습니다.</div>'}</article>${admin()?formArea():''}`}
 function safeUrl(url){try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
-function songsView(){if(selectedSong){const x=items.songs.find(s=>s.id===selectedSong);if(!x){selectedSong=null;return songsView()}const lyric={japanese:x.japanese,pronunciation:x.pronunciation,korean:x.korean}[lyricTab]||'아직 등록되지 않았습니다.';return `<button class="back" data-action="back">← 찬양 목록</button>${section(x.title,x.artist||'')}${admin()?`<div class="row-actions">${btn('찬양 수정','edit:songs:'+x.id)}${btn('찬양 삭제','delete:songs:'+x.id,'danger')}</div>`:''}<article class="card"><div class="tabs">${[['japanese','일본어 가사'],['pronunciation','한글 발음'],['korean','한국어 뜻']].map(([k,t])=>`<button data-lyric="${k}" class="${lyricTab===k?'selected':''}">${t}</button>`).join('')}</div><div class="lyrics">${esc(lyric)}</div>${safeUrl(x.youtube)?`<p><a href="${esc(safeUrl(x.youtube))}" target="_blank" rel="noopener noreferrer">참고 영상 열기 ↗</a></p>`:''}${safeUrl(x.audioURL)?`<h3>연습 음원</h3><audio class="media" controls preload="none" src="${esc(safeUrl(x.audioURL))}"></audio>`:'<p class="sub">음원 미등록</p>'}<div class="file-links">${safeUrl(x.scoreURL)?`<a href="${esc(safeUrl(x.scoreURL))}" target="_blank" rel="noopener noreferrer">악보 열기 / 다운로드 ↗</a>`:'<span class="sub">악보 미등록</span>'}</div></article>${admin()?formArea():''}`}return `${section('찬양 연습실','일본어 가사 · 한글 발음 · 음원 · 악보',admin()?btn('찬양 등록','form:songs'):'')}${items.songs.map(x=>`<article class="card"><div class="song"><div class="song-icon">♫</div><div class="song-info"><h3>${esc(x.title)}</h3><p>${esc(x.artist||'')} · ${x.audioURL?'음원 있음':'음원 없음'} · ${x.scoreURL?'악보 있음':'악보 없음'}</p></div>${btn('연습하기','song:'+x.id)}</div></article>`).join('')||'<div class="card empty">아직 등록된 찬양이 없습니다.<br>관리자가 첫 찬양을 추가해 주세요.</div>'}${admin()?formArea():''}`}
+function alignedLyrics(x){
+  const lines = key => String(x[key]||'').replace(/\r\n?/g,'\n').split('\n');
+  const jp=lines('japanese'), pr=lines('pronunciation'), ko=lines('korean');
+  const count=Math.max(jp.length,pr.length,ko.length);
+  if(![...jp,...pr,...ko].some(t=>t.trim()))return '<p class="sub">아직 등록된 가사가 없습니다.</p>';
+  let out='';
+  for(let i=0;i<count;i++){
+    const a=jp[i]||'',b=pr[i]||'',c=ko[i]||'';
+    if(!a.trim()&&!b.trim()&&!c.trim()){out+='<div class="lyric-break"></div>';continue}
+    out+=`<div class="lyric-verse">${a.trim()?`<div class="lyric-jp">${esc(a)}</div>`:''}${b.trim()?`<div class="lyric-pr">${esc(b)}</div>`:''}${c.trim()?`<div class="lyric-ko">${esc(c)}</div>`:''}</div>`;
+  }
+  return out;
+}
+function songsView(){
+  if(selectedSong){
+    const x=items.songs.find(s=>s.id===selectedSong);
+    if(!x){selectedSong=null;return songsView()}
+    return `<button class="back" data-action="back">← 찬양 목록</button>${section(x.title,x.artist||'')}${admin()?`<div class="row-actions">${btn('찬양 수정','edit:songs:'+x.id)}${btn('찬양 삭제','delete:songs:'+x.id,'danger')}</div>`:''}<article class="card song-detail">${safeUrl(x.audioURL)?`<div class="song-player"><span class="eyebrow">LISTEN & PRACTICE</span><h3>연습 음원</h3><audio class="media" controls preload="none" src="${esc(safeUrl(x.audioURL))}"></audio></div>`:'<p class="sub">음원 미등록</p>'}<div class="lyric-head"><h3>찬양 가사</h3><span class="sub">일본어 · 한글 발음 · 한국어 뜻</span></div><div class="aligned-lyrics">${alignedLyrics(x)}</div>${safeUrl(x.youtube)?`<p><a href="${esc(safeUrl(x.youtube))}" target="_blank" rel="noopener noreferrer">참고 영상 열기 ↗</a></p>`:''}<div class="file-links">${safeUrl(x.scoreURL)?`<a href="${esc(safeUrl(x.scoreURL))}" target="_blank" rel="noopener noreferrer">악보 열기 / 다운로드 ↗</a>`:'<span class="sub">악보 미등록</span>'}</div></article>${admin()?formArea():''}`;
+  }
+  return `${section('찬양 연습실','일본어 · 한글 발음 · 뜻을 한눈에',admin()?btn('찬양 등록','form:songs'):'')}${items.songs.map(x=>`<article class="card"><div class="song"><div class="song-icon">♫</div><div class="song-info"><h3>${esc(x.title)}</h3><p>${esc(x.artist||'')} · ${x.audioURL?'음원 있음':'음원 없음'} · ${x.scoreURL?'악보 있음':'악보 없음'}</p></div>${btn('연습하기','song:'+x.id)}</div></article>`).join('')||'<div class="card empty">아직 등록된 찬양이 없습니다.<br>관리자가 첫 찬양을 추가해 주세요.</div>'}${admin()?formArea():''}`;
+}
+
 function formArea(){return '<div id="form-area"></div>'}
 function field(label,name,type='text',value='',required=false){return `<label class="field">${esc(label)}<input name="${esc(name)}" type="${esc(type)}" value="${esc(value)}" ${required?'required':''}></label>`}
 function textarea(label,name,value=''){return `<label class="field wide">${esc(label)}<textarea name="${esc(name)}">${esc(value)}</textarea></label>`}
@@ -117,3 +138,22 @@ async function start(){
   });
 }
 start().catch(e=>root.innerHTML=`<div class="login-wrap"><div class="login-card"><h3>초기화 오류</h3><p class="error">${esc(e.message)}</p></div></div>`);
+
+// 모바일 찬양 가사 보기: 세 언어를 같은 줄에 배치합니다.
+const lyricStyle=document.createElement('style');
+lyricStyle.textContent=`
+.song-detail{overflow:hidden}
+.song-player{padding:18px 18px 14px;border-radius:16px;background:#f3f5f8;margin-bottom:28px}
+.song-player h3{margin:8px 0 12px}
+.song-player audio{width:100%;display:block}
+.lyric-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid #e8e9ed}
+.lyric-head h3{margin:0}
+.aligned-lyrics{padding:4px 0 18px}
+.lyric-verse{padding:18px 0;border-bottom:1px solid #eef0f3;word-break:keep-all;overflow-wrap:anywhere}
+.lyric-jp{font-size:clamp(17px,4.5vw,21px);font-weight:700;line-height:1.65;letter-spacing:-.025em;color:#17233a}
+.lyric-pr{font-size:clamp(15px,4vw,18px);line-height:1.7;color:#364d6c;margin-top:5px}
+.lyric-ko{font-size:14px;line-height:1.7;color:#7c8390;margin-top:5px}
+.lyric-break{height:18px}
+@media(max-width:600px){.song-detail{padding:20px 18px}.song-player{padding:14px;margin-bottom:22px}.lyric-verse{padding:16px 0}}
+`;
+document.head.appendChild(lyricStyle);
