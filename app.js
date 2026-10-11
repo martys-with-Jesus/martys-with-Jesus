@@ -206,13 +206,13 @@ lyricStyle.textContent=`
 .lyric-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid #e8e9ed}
 .lyric-head h3{margin:0}
 .aligned-lyrics{padding:4px 0 18px}
-.lyric-section-title{margin:30px 0 5px;padding:11px 14px;border-radius:12px;background:#f0f2f5;color:#24334a;font-size:16px;font-weight:800}
+.lyric-section-title{margin:20px 0 3px;padding:8px 11px;border-radius:10px;background:#f0f2f5;color:#24334a;font-size:14px;font-weight:800}
 .lyric-section-title:first-child{margin-top:12px}
-.lyric-verse{padding:18px 0;border-bottom:1px solid #eef0f3;word-break:keep-all;overflow-wrap:anywhere}
-.lyric-jp{font-size:clamp(17px,4.5vw,21px);font-weight:700;line-height:1.65;letter-spacing:-.025em;color:#17233a}
-.lyric-pr{font-size:clamp(15px,4vw,18px);line-height:1.7;color:#364d6c;margin-top:5px}
-.lyric-ko{font-size:14px;line-height:1.7;color:#7c8390;margin-top:5px}
+.lyric-verse{padding:11px 0;border-bottom:1px solid #eef0f3;word-break:keep-all;overflow-wrap:anywhere}
+.lyric-jp{font-size:clamp(15px,3.8vw,18px);font-weight:700;line-height:1.5;letter-spacing:-.025em;color:#17233a}
+.lyric-pr{font-size:clamp(13px,3.4vw,16px);line-height:1.5;color:#364d6c;margin-top:3px}
+.lyric-ko{font-size:12px;line-height:1.5;color:#7c8390;margin-top:3px}
 .lyric-break{height:18px}
-@media(max-width:600px){.song-detail{padding:20px 18px}.song-player{padding:14px;margin-bottom:22px}.lyric-verse{padding:16px 0}}
+@media(max-width:600px){.song-detail{padding:20px 18px}.song-player{padding:14px;margin-bottom:22px}.lyric-verse{padding:10px 0}}
 `;
 document.head.appendChild(lyricStyle);
