@@ -13,7 +13,44 @@ const admin=()=>profile?.role==='admin';
 const btn=(name,act,cls='secondary')=>`<button class="btn ${cls}" data-action="${act}">${esc(name)}</button>`;
 const notice=(message)=>{const e=document.getElementById('flash');if(e){e.textContent=message;e.hidden=false;setTimeout(()=>{if(e)e.hidden=true},5500);}else alert(message)};
 function cleanSubs(){unsubs.forEach(f=>f());unsubs=[];}
-function loginPage(error=''){root.innerHTML=`<main class="login-wrap"><section class="login-card"><span class="eyebrow">JUAN YOUTH · FUKUOKA 2026</span><h1>MARTYS</h1><p>일본 선교팀 8명 전용 공간<br>팀원 계정으로 로그인해 주세요.</p><form id="login-form"><label class="field">이메일<input type="email" name="email" required autocomplete="username"></label><label class="field">비밀번호<input type="password" name="password" required autocomplete="current-password"></label><button class="btn full" type="submit">로그인</button></form><p class="error" id="login-error">${esc(error)}</p><p class="muted" style="font-size:12px">계정은 관리자가 Firebase에서 발급합니다. 회원가입은 제공하지 않습니다.</p></section></main>`;document.getElementById('login-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await signInWithEmailAndPassword(auth,f.get('email'),f.get('password'))}catch(err){document.getElementById('login-error').textContent='로그인에 실패했습니다. 이메일·비밀번호와 계정 상태를 확인하세요.'}}}
+function loginPage(error=''){
+  root.innerHTML = `
+    <main class="login-wrap">
+      <section class="login-card">
+        <span class="eyebrow">MARTYS · ADMIN</span>
+        <h1>관리자 로그인</h1>
+        <p>관리자만 로그인해 주세요.</p>
+        <form id="login-form">
+          <label class="field">이메일
+            <input type="email" name="email" required>
+          </label>
+          <label class="field">비밀번호
+            <input type="password" name="password" required>
+          </label>
+          <button class="btn full" type="submit">로그인</button>
+        </form>
+        <p class="error" id="login-error">${esc(error)}</p>
+        <button class="btn secondary" data-action="public">
+          홈페이지로 돌아가기
+        </button>
+      </section>
+    </main>`;
+
+  root.querySelector('[data-action="public"]').onclick = () => shell();
+
+  document.getElementById('login-form').onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+      await signInWithEmailAndPassword(
+        auth, f.get('email'), f.get('password')
+      );
+    } catch (err) {
+      document.getElementById('login-error').textContent =
+        '로그인에 실패했습니다.';
+    }
+  };
+}
 function denied(){root.innerHTML=`<main class="login-wrap"><section class="login-card"><h1>MARTYS</h1><h3>팀원 승인이 필요합니다</h3><p>로그인은 되었지만 승인된 팀원 목록에 없습니다. 관리자에게 계정 UID 등록을 요청하세요.</p>${btn('로그아웃','logout')}</section></main>`;bindActions()}
 function shell(){root.innerHTML=`<div class="shell"><header class="topbar"><div class="logo">MARTYS<small>JAPAN MISSION 2026</small></div><div class="header-actions"><span class="muted" style="font-size:12px">${esc(profile.name||user.email)} · ${admin()?'관리자':'팀원'}</span>${btn('로그아웃','logout')}</div></header><div id="flash" class="notice" hidden></div><nav class="nav" id="navigation">${[['home','홈'],['purpose','선교 목적'],['schedule','일정'],['budget','예산'],['songs','찬양 연습실']].map(([k,v])=>`<button data-tab="${k}" class="${active===k?'active':''}">${v}</button>`).join('')}</nav><main id="content"></main><footer class="footer">MARTYS · 주안감리교회 참청년부 · 2026.10.16–18</footer></div>`;root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.tab;selectedSong=null;render()});bindActions();render()}
 function bindActions(){root.querySelectorAll('[data-action="logout"]').forEach(b=>b.onclick=()=>signOut(auth))}
