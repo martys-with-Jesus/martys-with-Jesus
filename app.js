@@ -67,15 +67,35 @@ function scheduleView(){const days=[['2026-10-16','DAY 1 · 10월 16일 (금)'],
 function budget(){const spent=totalSpent(),pct=Math.min(100,Math.max(0,spent/TOTAL*100));return `${section('공동 예산 사용 현황','8명 · 1인 공동회비 400,000원 · 항공권 개인 부담',admin()?btn('지출 등록','form:expenses'):'')}<div class="grid"><div class="card"><h3>공동 계획 예산</h3><div class="stat">${won(TOTAL)}</div><p class="sub">항공권 제외 · 공동회비 8명 × 400,000원</p></div><div class="card"><h3>남은 공동 예산</h3><div class="stat">${won(TOTAL-spent)}</div><p class="sub">등록 지출 ${won(spent)}</p></div></div><article class="card"><strong>예산 집행률 ${pct.toFixed(1)}%</strong><div class="progress"><span style="width:${pct}%"></span></div><p class="sub">계획 금액은 지출로 계산하지 않습니다. 등록한 지출만 잔액에 반영됩니다.</p></article><article class="card"><h3>항목별 공동 예산</h3>${planned.map(([name,v])=>{const used=items.expenses.filter(x=>x.category===name).reduce((s,x)=>s+Number(x.amount||0),0);return `<div class="list-row"><span>${esc(name)}<p class="sub">사용 ${won(used)} · 잔액 ${won(v-used)}</p></span><strong class="money">${won(v)}</strong></div>`}).join('')}</article><article class="card"><h3>항공권 · 개인 부담 (공동예산 제외)</h3><div class="list-row"><span>항공권 총액 (8명)</span><strong class="money">${won(AIRFARE)}</strong></div><p class="sub">1인 430,000원 · 공동예산 및 지출 합계에 포함되지 않습니다.</p></article><article class="card"><h3>지출 내역</h3>${items.expenses.map(x=>`<div class="list-row"><div><strong>${esc(x.category)} · ${esc(x.title)}</strong><p>${esc(x.date||'')}${x.memo?' · '+esc(x.memo):''}</p></div><div style="text-align:right"><strong>${won(x.amount)}</strong>${admin()?`<div class="row-actions">${btn('수정','edit:expenses:'+x.id,'tiny secondary')}${btn('삭제','delete:expenses:'+x.id,'tiny danger')}</div>`:''}</div></div>`).join('')||'<div class="empty">아직 등록된 지출이 없습니다.</div>'}</article>${admin()?formArea():''}`}
 function safeUrl(url){try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}}
 function alignedLyrics(x){
-  const lines = key => String(x[key]||'').replace(/\r\n?/g,'\n').split('\n');
-  const jp=lines('japanese'), pr=lines('pronunciation'), ko=lines('korean');
-  const count=Math.max(jp.length,pr.length,ko.length);
-  if(![...jp,...pr,...ko].some(t=>t.trim()))return '<p class="sub">아직 등록된 가사가 없습니다.</p>';
+  // 절 제목과 빈 줄은 각 언어에서 독립적으로 처리하여 줄 밀림을 방지합니다.
+  const heading = t => /^(?:\d+\s*절|후렴|코러스|브릿지|브리지|전주|간주|마지막\s*후렴|반복|verse\s*\d+|chorus|bridge|intro|outro)(?:\s*[:：-])?$/i.test(t.trim());
+  const clean = key => String(x[key]||'').replace(/\r\n?/g,'\n').split('\n').map(t=>t.trim());
+  const arrays=[clean('japanese'),clean('pronunciation'),clean('korean')];
+  if(!arrays.some(a=>a.some(t=>t)))return '<p class="sub">아직 등록된 가사가 없습니다.</p>';
+  const parse = lines => {
+    const groups=[];let current={name:'',lines:[]};
+    for(const line of lines){
+      if(heading(line)){
+        if(current.name||current.lines.some(Boolean))groups.push(current);
+        current={name:line,lines:[]};
+      }else if(line){current.lines.push(line)}
+    }
+    if(current.name||current.lines.some(Boolean))groups.push(current);
+    return groups;
+  };
+  const parsed=arrays.map(parse);
+  const labels=parsed.find(groups=>groups.some(g=>g.name))||parsed[0];
+  const total=Math.max(...parsed.map(g=>g.length));
   let out='';
-  for(let i=0;i<count;i++){
-    const a=jp[i]||'',b=pr[i]||'',c=ko[i]||'';
-    if(!a.trim()&&!b.trim()&&!c.trim()){out+='<div class="lyric-break"></div>';continue}
-    out+=`<div class="lyric-verse">${a.trim()?`<div class="lyric-jp">${esc(a)}</div>`:''}${b.trim()?`<div class="lyric-pr">${esc(b)}</div>`:''}${c.trim()?`<div class="lyric-ko">${esc(c)}</div>`:''}</div>`;
+  for(let g=0;g<total;g++){
+    const groups=parsed.map(p=>p[g]||{name:'',lines:[]});
+    const label=(labels[g]&&labels[g].name)||groups.find(v=>v.name)?.name||'';
+    if(label)out+=`<div class="lyric-section-title"><span>${esc(label)}</span></div>`;
+    const n=Math.max(...groups.map(v=>v.lines.length));
+    for(let i=0;i<n;i++){
+      const [a,b,c]=groups.map(v=>v.lines[i]||'');
+      out+=`<div class="lyric-verse">${a?`<div class="lyric-jp">${esc(a)}</div>`:''}${b?`<div class="lyric-pr">${esc(b)}</div>`:''}${c?`<div class="lyric-ko">${esc(c)}</div>`:''}</div>`;
+    }
   }
   return out;
 }
@@ -149,6 +169,8 @@ lyricStyle.textContent=`
 .lyric-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid #e8e9ed}
 .lyric-head h3{margin:0}
 .aligned-lyrics{padding:4px 0 18px}
+.lyric-section-title{margin:30px 0 5px;padding:11px 14px;border-radius:12px;background:#f0f2f5;color:#24334a;font-size:16px;font-weight:800}
+.lyric-section-title:first-child{margin-top:12px}
 .lyric-verse{padding:18px 0;border-bottom:1px solid #eef0f3;word-break:keep-all;overflow-wrap:anywhere}
 .lyric-jp{font-size:clamp(17px,4.5vw,21px);font-weight:700;line-height:1.65;letter-spacing:-.025em;color:#17233a}
 .lyric-pr{font-size:clamp(15px,4vw,18px);line-height:1.7;color:#364d6c;margin-top:5px}
