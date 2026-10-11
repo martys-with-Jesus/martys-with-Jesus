@@ -50,7 +50,7 @@ function loginPage(error=''){
 }
 function shell(){
   const who=admin()?`${esc(profile.name||user.email)} · 관리자`:'팀원 열람용';
-  root.innerHTML=`<div class="shell"><header class="topbar"><div class="logo">MARTYS<small>JAPAN MISSION 2026</small></div><div class="header-actions"><span class="muted" style="font-size:12px">${who}</span>${admin()?btn('로그아웃','logout'):btn('관리자 로그인','admin-login')}</div></header><div id="flash" class="notice" hidden></div><nav class="nav" id="navigation">${[['home','홈'],['purpose','선교 목적'],['schedule','일정'],['budget','예산'],['songs','찬양 연습실']].map(([k,v])=>`<button data-tab="${k}" class="${active===k?'active':''}">${v}</button>`).join('')}</nav><main id="content"></main><footer class="footer">MARTYS · 주안감리교회 참청년부 · 2026.10.16–18</footer></div>`;
+  root.innerHTML=`<div class="shell"><header class="topbar"><div class="logo">MARTYS<small>JAPAN MISSION 2026</small></div><div class="header-actions"><span class="muted" style="font-size:12px">${who}</span>${admin()?btn('로그아웃','logout'):btn('관리자 로그인','admin-login')}</div></header><div id="flash" class="notice" hidden></div><nav class="nav" id="navigation">${[['home','홈'],['purpose','선교 목적'],['schedule','일정'],['budget','예산'],['songs','찬양 연습실'],['japanese','일본어 회화']].map(([k,v])=>`<button data-tab="${k}" class="${active===k?'active':''}">${v}</button>`).join('')}</nav><main id="content"></main><footer class="footer">MARTYS · 주안감리교회 참청년부 · 2026.10.16–18</footer></div>`;
   root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.tab;selectedSong=null;render()});bindActions();render();
 }
 function bindActions(){
@@ -59,7 +59,33 @@ function bindActions(){
   root.querySelectorAll('[data-action="public"]').forEach(b=>b.onclick=()=>shell());
 }
 function section(title,sub='',action=''){return `<div class="section-head"><div><h2>${esc(title)}</h2><span class="sub">${esc(sub)}</span></div>${action}</div>`}
-function render(){const c=document.getElementById('content');if(!c)return;root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===active));c.innerHTML=({home:home,purpose:purpose,schedule:scheduleView,budget:budget,songs:songsView}[active]||home)();bindContent(c)}
+function render(){const c=document.getElementById('content');if(!c)return;root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===active));c.innerHTML=({home:home,purpose:purpose,schedule:scheduleView,budget:budget,songs:songsView,japanese:japaneseView}[active]||home)();bindContent(c)}
+
+function japaneseView(){
+ const groups=[
+ ['기본 인사',[
+ ['こんにちは','곤니치와','안녕하세요'],
+ ['ありがとうございます','아리가토- 고자이마스','감사합니다'],
+ ['すみません','스미마센','실례합니다 / 죄송합니다'],
+ ['はじめまして','하지메마시테','처음 뵙겠습니다'],
+ ['お会いできてうれしいです','오아이 데키테 우레시이데스','만나서 반갑습니다']]],
+ ['현지 교류',[
+ ['私たちは韓国から来た教会の青年です','와타시타치와 칸코쿠카라 키타 쿄-카이노 세이넨데스','저희는 한국에서 온 교회 청년입니다'],
+ ['少しお話ししてもいいですか？','스코시 오하나시 시테모 이이데스카?','잠시 이야기 나눌 수 있을까요?'],
+ ['お祈りしてもいいですか？','오이노리 시테모 이이데스카?','기도해 드려도 될까요?'],
+ ['よかったら、教会に来てみませんか？','요캇타라 쿄-카이니 키테 미마센카?','괜찮으시면 교회에 한번 와 보시겠어요?']]],
+ ['복음 전하기',[
+ ['イエス・キリストをご存じですか？','이에스 키리스토오 고존지데스카?','예수 그리스도를 아시나요?'],
+ ['クリスマスをご存じですか？','쿠리스마스오 고존지데스카?','크리스마스를 아시나요?'],
+ ['クリスマスはイエス様がお生まれになった日をお祝いする日です','쿠리스마스와 이에스사마가 오우마레니 낫타 히오 오이와이스루 히데스','크리스마스는 예수님의 탄생을 기념하는 날입니다'],
+ ['イエス様は私たちの罪のために十字架で死なれました','이에스사마와 와타시타치노 츠미노 타메니 쥬-지카데 시나레마시타','예수님은 우리의 죄를 위해 십자가에서 죽으셨습니다'],
+ ['それは、私たちをとても愛してくださっているからです','소레와 와타시타치오 토테모 아이시테 쿠다삿테이루카라데스','우리를 너무나 사랑하시기 때문입니다'],
+ ['イエス様は三日目によみがえられました','이에스사마와 밋카메니 요미가에라레마시타','예수님은 사흘 만에 다시 살아나셨습니다'],
+ ['イエス様を信じると、新しい人生を歩むことができます','이에스사마오 신지루토 아타라시이 진세이오 아유무 코토가 데키마스','예수님을 믿으면 새로운 삶을 살아갈 수 있습니다']]]
+ ];
+ return `${section('일본어 회화','일본어 · 한글 발음 · 한국어 뜻')}${groups.map(([title,phrases],i)=>`<article class="card" style="margin-bottom:18px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span class="eyebrow">0${i+1}</span><h3 style="margin:0">${title}</h3></div>${phrases.map(([jp,pron,ko])=>`<div style="padding:17px 0;border-top:1px solid #e8ebeb;overflow-wrap:anywhere"><div lang="ja" style="font-size:clamp(17px,4.5vw,21px);font-weight:750;line-height:1.65;color:#20353c">${esc(jp)}</div><div style="font-size:14px;font-weight:650;color:#476879;margin-top:5px">${esc(pron)}</div><div style="font-size:14px;color:#69787c;margin-top:5px">${esc(ko)}</div></div>`).join('')}</article>`).join('')}<p class="sub" style="text-align:center">상대방의 의사를 존중하며 부드럽게 대화를 시작해 주세요.</p>`;
+}
+
 function totalSpent(){return items.expenses.reduce((s,e)=>s+Number(e.amount||0),0)}
 function home(){const spent=totalSpent();return `<section class="hero"><span class="eyebrow">WE ARE HIS WITNESSES · ACTS 1:8</span><h1>일본 땅에<br>찬양을 흘려보내다.</h1><p>하나님께 시간을 드리고 물질을 드리는 기쁨을 누리며<br>생명 되신 예수님을 전합니다.</p><span class="pill">2026.10.16 — 10.18 · 후쿠오카 텐진 · 8명</span></section><div class="grid"><article class="card"><h3>찬양 연습</h3><div class="stat">${items.songs.length}곡</div><p class="sub">가사 · 한글 발음 · 음원 · 악보</p>${btn('연습실 열기','goto:songs')}</article><article class="card"><h3>남은 공동 예산</h3><div class="stat">${won(TOTAL-spent)}</div><p class="sub">총 계획 ${won(TOTAL)} · 등록 지출 ${won(spent)}</p>${btn('예산 보기','goto:budget')}</article><article class="card"><h3>선교 일정</h3><div class="stat">2박 3일</div><p class="sub">10월 16일(금) – 18일(일)</p>${btn('일정 보기','goto:schedule')}</article><article class="card"><h3>선교 비전</h3><p>우리는 예수 그리스도의 증인입니다.</p>${btn('목적 보기','goto:purpose')}</article></div>`}
 function purpose(){return `${section('우리의 선교 목적','WHY WE GO')}<article class="card"><span class="eyebrow">OUR VISION</span><h2>삶으로 복음을 증언하는 공동체</h2><p style="line-height:2">하나님께 시간을 드리고 물질을 드리는 기쁨을 누리며 생명 되신 예수님을 전합니다.</p><div class="line"></div><h3>우리가 가는 이유</h3><p style="line-height:2">직장인 청년들이 자신의 시간과 물질을 하나님께 드리는 기쁨을 배우고, 일본 땅에 찬양과 예배를 흘려보내며 예수 그리스도의 사랑을 전하기 위해 떠납니다.</p><p class="admin-note">“오직 성령이 너희에게 임하시면 … 땅 끝까지 이르러 내 증인이 되리라” · 사도행전 1:8</p></article><article class="card"><h3>함께 기억할 기도제목</h3><p>① 일본 땅의 사람들이 복음을 들을 수 있는 마음을 갖도록</p><p>② 선교팀이 하나님을 기대하고 경험하도록</p><p>③ 현지 교회 및 선교사님과 좋은 동역이 이루어지도록</p></article>`}
