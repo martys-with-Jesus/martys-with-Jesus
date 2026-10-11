@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function member() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.active == true
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin','member'];
+    }
+    function admin() {
+      return member() && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /songs/{type}/{fileName} {
+      allow read: if member();
+      allow write: if admin() && (
+        (type == 'audio' && request.resource.size < 25 * 1024 * 1024 && request.resource.contentType.matches('audio/.*')) ||
+        (type == 'score' && request.resource.size < 15 * 1024 * 1024 && (request.resource.contentType == 'application/pdf' || request.resource.contentType.matches('image/.*')))
+      );
+      allow delete: if admin();
+    }
+  }
+}

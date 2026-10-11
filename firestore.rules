@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function member() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'member'];
+    }
+    function admin() {
+      return member() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false; // 팀원 등록/권한 변경은 Firebase 콘솔에서만 수행
+    }
+    match /{name}/{id} {
+      allow read: if name in ['expenses','schedule','songs'] && member();
+      allow create: if name in ['expenses','schedule','songs'] && admin() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if name in ['expenses','schedule','songs'] && admin();
+    }
+  }
+}
