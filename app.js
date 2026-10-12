@@ -176,7 +176,7 @@ function songFormView(title){
   const norm=s=>String(s||'').toLowerCase().replace(/[\\s·・()（）\\-]/g,'');
   const found=SONG_FORMS.find(f=>f.names.some(n=>norm(title).includes(norm(n))));
   if(!found)return '';
-  return `<div class="song-player" style="margin-bottom:18px"><span class="eyebrow">SONG FORM · 찬양 순서</span><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">${found.steps.map((step,i)=>`<span style="background:#fff;border:1px solid #dce3e6;border-radius:100px;padding:8px 11px;font-size:13px;font-weight:650;color:#29414a">${i+1}. ${esc(step)}</span>`).join('')}</div></div>`;
+  return `<div class="song-player" style="margin-bottom:18px"><span class="eyebrow">SONG FORM · 찬양 순서</span><div style="margin-top:12px;font-size:16px;line-height:1.9;font-weight:650;color:#29414a;overflow-wrap:break-word">${found.steps.map(step=>esc(step)).join(' - ')}</div></div>`;
 }
 function songsView(){
   if(selectedSong){
