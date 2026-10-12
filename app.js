@@ -167,11 +167,22 @@ function alignedLyrics(x){
   }
   return out;
 }
+const SONG_FORMS = [
+  {names:['예수 우리들의 밝은 빛'], steps:['전주','1절','2절','후렴','1절','후렴']},
+  {names:['하나님의 세계'], steps:['전주','1절','2절','후렴','브릿지','후렴','아웃트로']},
+  {names:['꽃들도','꽃들도 (花も)'], steps:['전주','1절','2절','후렴','반주','후렴']}
+];
+function songFormView(title){
+  const norm=s=>String(s||'').toLowerCase().replace(/[\\s·・()（）\\-]/g,'');
+  const found=SONG_FORMS.find(f=>f.names.some(n=>norm(title).includes(norm(n))));
+  if(!found)return '';
+  return `<div class="song-player" style="margin-bottom:18px"><span class="eyebrow">SONG FORM · 찬양 순서</span><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">${found.steps.map((step,i)=>`<span style="background:#fff;border:1px solid #dce3e6;border-radius:100px;padding:8px 11px;font-size:13px;font-weight:650;color:#29414a">${i+1}. ${esc(step)}</span>`).join('')}</div></div>`;
+}
 function songsView(){
   if(selectedSong){
     const x=items.songs.find(s=>s.id===selectedSong);
     if(!x){selectedSong=null;return songsView()}
-    return `<button class="back" data-action="back">← 찬양 목록</button>${section(x.title,x.artist||'')}${admin()?`<div class="row-actions">${btn('찬양 수정','edit:songs:'+x.id)}${btn('찬양 삭제','delete:songs:'+x.id,'danger')}</div>`:''}<article class="card song-detail">${safeUrl(x.audioURL)?`<div class="song-player"><span class="eyebrow">LISTEN & PRACTICE</span><h3>연습 음원</h3><audio class="media" controls preload="none" src="${esc(safeUrl(x.audioURL))}"></audio></div>`:'<p class="sub">음원 미등록</p>'}<div class="lyric-head"><h3>찬양 가사</h3><span class="sub">일본어 · 한글 발음 · 한국어 뜻</span></div><div class="aligned-lyrics">${alignedLyrics(x)}</div>${safeUrl(x.youtube)?`<p><a href="${esc(safeUrl(x.youtube))}" target="_blank" rel="noopener noreferrer">참고 영상 열기 ↗</a></p>`:''}<div class="file-links">${safeUrl(x.scoreURL)?`<a href="${esc(safeUrl(x.scoreURL))}" target="_blank" rel="noopener noreferrer">악보 열기 / 다운로드 ↗</a>`:'<span class="sub">악보 미등록</span>'}</div></article>${admin()?formArea():''}`;
+    return `<button class="back" data-action="back">← 찬양 목록</button>${section(x.title,x.artist||'')}${admin()?`<div class="row-actions">${btn('찬양 수정','edit:songs:'+x.id)}${btn('찬양 삭제','delete:songs:'+x.id,'danger')}</div>`:''}<article class="card song-detail">${safeUrl(x.audioURL)?`<div class="song-player"><span class="eyebrow">LISTEN & PRACTICE</span><h3>연습 음원</h3><audio class="media" controls preload="none" src="${esc(safeUrl(x.audioURL))}"></audio></div>`:'<p class="sub">음원 미등록</p>'}${songFormView(x.title)}<div class="lyric-head"><h3>찬양 가사</h3><span class="sub">일본어 · 한글 발음 · 한국어 뜻</span></div><div class="aligned-lyrics">${alignedLyrics(x)}</div>${safeUrl(x.youtube)?`<p><a href="${esc(safeUrl(x.youtube))}" target="_blank" rel="noopener noreferrer">참고 영상 열기 ↗</a></p>`:''}<div class="file-links">${safeUrl(x.scoreURL)?`<a href="${esc(safeUrl(x.scoreURL))}" target="_blank" rel="noopener noreferrer">악보 열기 / 다운로드 ↗</a>`:'<span class="sub">악보 미등록</span>'}</div></article>${admin()?formArea():''}`;
   }
   return `${section('찬양 연습실','일본어 · 한글 발음 · 뜻을 한눈에',admin()?btn('찬양 등록','form:songs'):'')}${items.songs.map(x=>`<article class="card"><div class="song"><div class="song-icon">♫</div><div class="song-info"><h3>${esc(x.title)}</h3><p>${esc(x.artist||'')} · ${x.audioURL?'음원 있음':'음원 없음'} · ${x.scoreURL?'악보 있음':'악보 없음'}</p></div>${btn('연습하기','song:'+x.id)}</div></article>`).join('')||'<div class="card empty">아직 등록된 찬양이 없습니다.<br>관리자가 첫 찬양을 추가해 주세요.</div>'}${admin()?formArea():''}`;
 }
