@@ -6,7 +6,7 @@ import { firebaseConfig } from './firebase-config.js';
 const root = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const won = n => Number(n || 0).toLocaleString('ko-KR') + '원';
-const planned = [['숙박비',480000],['식비',800000],['현지 교통비',240000],['선교 교제비',320000],['전도 물품',720000],['기타 공동경비',240000],['비상금',400000]];
+const planned = [['숙박비',360000],['식비',920000],['현지 교통비',240000],['선교 교제비',320000],['전도 물품',720000],['기타 공동경비',240000],['비상금',400000]];
 const TOTAL = planned.reduce((sum, [,amount]) => sum + amount, 0);
 const AIRFARE = 3440000; // 개인 부담, 공동예산에서 제외
 const DEFAULT_AUDIO_URL = 'https://martys-with-jesus.github.io/martys-with-Jesus/audio/' + encodeURIComponent('TalkFile_花も 꽃도 Hanamo_ (Coverd by ANNA) (1).mp3.mp3');
